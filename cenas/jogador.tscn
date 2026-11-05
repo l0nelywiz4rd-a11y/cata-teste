@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://b8v2pl0abjgwa"]
+
+[ext_resource type="Script" uid="uid://yo5d15mu6lbw" path="res://scripts/tiles_move.gd" id="1_bqi7g"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_u4i7n"]
+
+[node name="Jogador" type="Node3D" unique_id=1508754047]
+script = ExtResource("1_bqi7g")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=244590310]
+mesh = SubResource("CapsuleMesh_u4i7n")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1121742863]
+transform = Transform3D(1, 0, 0, 0, 0.5820293, 0.8131678, 0, -0.8131678, 0.5820293, 0, 5.724491, 3.6730292)

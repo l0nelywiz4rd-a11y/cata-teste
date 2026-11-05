@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://br8t4a88hyp2n"]
+
+[ext_resource type="Script" uid="uid://c8li15xrnisfr" path="res://scripts/tiles_data.gd" id="1_qpun7"]
+[ext_resource type="Shader" uid="uid://1ffdkilb4b3c" path="res://corte.gdshader" id="2_8mxyb"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ln3fj"]
+render_priority = 0
+shader = ExtResource("2_8mxyb")
+shader_parameter/cor = Color(0.5, 0.5, 0.5, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_hbp8a"]
+material = SubResource("ShaderMaterial_ln3fj")
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_j4mvg"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hbp8a"]
+render_priority = 0
+shader = ExtResource("2_8mxyb")
+shader_parameter/cor = Color(0.5019608, 0.9882353, 0.1882353, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8mxyb"]
+material = SubResource("ShaderMaterial_hbp8a")
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qeiev"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hnnuc"]
+render_priority = 0
+shader = ExtResource("2_8mxyb")
+shader_parameter/cor = Color(0.91764706, 0.93333334, 0, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_qeiev"]
+material = SubResource("ShaderMaterial_hnnuc")
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4e0wc"]
+size = Vector3(2, 2, 2)
+
+[node name="Tiles" type="Node3D" unique_id=1518039841]
+script = ExtResource("1_qpun7")
+
+[node name="Piso" type="MeshInstance3D" parent="." unique_id=364815820]
+mesh = SubResource("BoxMesh_hbp8a")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Piso" unique_id=1800092117]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Piso/StaticBody3D" unique_id=887004219]
+shape = SubResource("BoxShape3D_j4mvg")
+
+[node name="PisoLento" type="MeshInstance3D" parent="." unique_id=1871938363]
+mesh = SubResource("BoxMesh_8mxyb")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="PisoLento" unique_id=961667823]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PisoLento/StaticBody3D" unique_id=1092254770]
+shape = SubResource("BoxShape3D_qeiev")
+
+[node name="Rampa" type="MeshInstance3D" parent="." unique_id=112753423]
+mesh = SubResource("BoxMesh_qeiev")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Rampa" unique_id=263285418]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Rampa/StaticBody3D" unique_id=1601514532]
+shape = SubResource("BoxShape3D_4e0wc")
