@@ -7,6 +7,7 @@
 render_priority = 0
 shader = ExtResource("2_8mxyb")
 shader_parameter/cor = Color(0.5, 0.5, 0.5, 1)
+shader_parameter/alpha_acima = 0.25
 
 [sub_resource type="BoxMesh" id="BoxMesh_hbp8a"]
 material = SubResource("ShaderMaterial_ln3fj")
@@ -19,6 +20,7 @@ size = Vector3(2, 2, 2)
 render_priority = 0
 shader = ExtResource("2_8mxyb")
 shader_parameter/cor = Color(0.5019608, 0.9882353, 0.1882353, 1)
+shader_parameter/alpha_acima = 0.25
 
 [sub_resource type="BoxMesh" id="BoxMesh_8mxyb"]
 material = SubResource("ShaderMaterial_hbp8a")
@@ -31,6 +33,7 @@ size = Vector3(2, 2, 2)
 render_priority = 0
 shader = ExtResource("2_8mxyb")
 shader_parameter/cor = Color(0.91764706, 0.93333334, 0, 1)
+shader_parameter/alpha_acima = 0.25
 
 [sub_resource type="BoxMesh" id="BoxMesh_qeiev"]
 material = SubResource("ShaderMaterial_hnnuc")

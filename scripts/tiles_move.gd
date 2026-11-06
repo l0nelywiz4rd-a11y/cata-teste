@@ -2,10 +2,18 @@ extends Node3D
 #------------------------------------------------------------------------------------
 @export var tempo_por_tile := 0.18   # menor = mais rápido
 @export var celula_inicial := Vector3i(2, 1, 2)
+@export var ticks_por_segundo := 550.0   # quanto o débito cai por segundo
 #------------------------------------------------------------------------------------
 var mapa: GridMap
 var celula: Vector3i
 var movendo := false
+
+const CUSTO_MOVER := 100.0
+const CUSTO_ESCADA := 150.0
+
+var debito := 0.0
+
+signal debito_mudou(valor: float)   # pra uma barra na tela depois
 #------------------------------------------------------------------------------------
 var veio_de_escalavel := false
 const ALTURA_ANDAR := 1   # quantas camadas tem um andar
@@ -39,8 +47,11 @@ func _ready():
 
 func _process(_delta):
 	RenderingServer.global_shader_parameter_set("corte_y", global_position.y + 1.1)
-	if movendo:
-		return  # espera terminar o passo atual
+	
+	debito = max(debito - ticks_por_segundo * _delta, 0.0)
+	
+	if movendo or not pode_agir():
+		return
 
 	var direcao := Vector3i.ZERO
 	if Input.is_action_pressed("frente"):
@@ -82,7 +93,9 @@ func tentar_mover(direcao: Vector3i):
 	movendo = true
 
 	var chao = mapa.get_cell_item(alvo + Vector3i(0, -1, 0))
-	var tempo = tempo_por_tile / TilesData.velocidade(chao)
+	var custo = CUSTO_MOVER / TilesData.velocidade(chao)
+	gastar(custo)
+	var tempo = custo / ticks_por_segundo
 
 	var tween = create_tween()
 	tween.tween_property(self, "global_position", _centro_da_celula(alvo), tempo)
@@ -150,7 +163,18 @@ func tentar_escada(subindo: bool):
 	veio_de_escalavel = false
 	celula = alvo
 	movendo = true
+	
+	gastar(CUSTO_ESCADA)
 
 	var tween = create_tween()
-	tween.tween_property(self, "global_position", _centro_da_celula(alvo), tempo_por_tile)
+	tween.tween_property(self, "global_position", _centro_da_celula(alvo), CUSTO_ESCADA / ticks_por_segundo)
 	tween.finished.connect(func(): movendo = false)
+
+
+func pode_agir() -> bool:
+	return debito <= 0.0
+
+
+func gastar(custo: float):
+	debito += custo
+	debito_mudou.emit(debito)
