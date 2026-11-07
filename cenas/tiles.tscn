@@ -8,6 +8,10 @@ render_priority = 0
 shader = ExtResource("2_8mxyb")
 shader_parameter/cor = Color(0.5, 0.5, 0.5, 1)
 shader_parameter/alpha_acima = 0.25
+shader_parameter/visao_ativa = false
+shader_parameter/visao_canto = Vector3(0, 0, 0)
+shader_parameter/visao_tamanho = Vector3(2, 2, 2)
+shader_parameter/visao_dim = Vector3i(1, 1, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_hbp8a"]
 material = SubResource("ShaderMaterial_ln3fj")
@@ -21,6 +25,10 @@ render_priority = 0
 shader = ExtResource("2_8mxyb")
 shader_parameter/cor = Color(0.5019608, 0.9882353, 0.1882353, 1)
 shader_parameter/alpha_acima = 0.25
+shader_parameter/visao_ativa = false
+shader_parameter/visao_canto = Vector3(0, 0, 0)
+shader_parameter/visao_tamanho = Vector3(2, 2, 2)
+shader_parameter/visao_dim = Vector3i(1, 1, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_8mxyb"]
 material = SubResource("ShaderMaterial_hbp8a")
@@ -34,12 +42,16 @@ render_priority = 0
 shader = ExtResource("2_8mxyb")
 shader_parameter/cor = Color(0.91764706, 0.93333334, 0, 1)
 shader_parameter/alpha_acima = 0.25
+shader_parameter/visao_ativa = false
+shader_parameter/visao_canto = Vector3(0, 0, 0)
+shader_parameter/visao_tamanho = Vector3(2, 2, 2)
+shader_parameter/visao_dim = Vector3i(1, 1, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_qeiev"]
 material = SubResource("ShaderMaterial_hnnuc")
 size = Vector3(2, 2, 2)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_4e0wc"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_m4u64"]
 size = Vector3(2, 2, 2)
 
 [node name="Tiles" type="Node3D" unique_id=1518039841]
@@ -67,4 +79,4 @@ mesh = SubResource("BoxMesh_qeiev")
 [node name="StaticBody3D" type="StaticBody3D" parent="Rampa" unique_id=263285418]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Rampa/StaticBody3D" unique_id=1601514532]
-shape = SubResource("BoxShape3D_4e0wc")
+shape = SubResource("BoxShape3D_m4u64")

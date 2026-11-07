@@ -10,6 +10,7 @@ size = Vector3(0.5, 0.5, 0.5)
 
 [node name="Jogador" type="Node3D" unique_id=1508754047 node_paths=PackedStringArray("visual")]
 script = ExtResource("1_bqi7g")
+celula_inicial = Vector3i(3, 1, 4)
 visual = NodePath("Visual")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1121742863]
