@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b8v2pl0abjgwa"]
 
 [ext_resource type="Script" uid="uid://yo5d15mu6lbw" path="res://scripts/tiles_move.gd" id="1_bqi7g"]
+[ext_resource type="Script" uid="uid://cnbx1g2tfra7j" path="res://scripts/fonte_de_luz.gd" id="2_06a7y"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_j4mvg"]
 size = Vector3(0.5, 0.5, 0.5)
@@ -22,3 +23,6 @@ mesh = SubResource("BoxMesh_j4mvg")
 
 [node name="Capsula" type="MeshInstance3D" parent="Visual" unique_id=244590310]
 mesh = SubResource("CapsuleMesh_u4i7n")
+
+[node name="Lanterna" type="Node3D" parent="." unique_id=192826256]
+script = ExtResource("2_06a7y")

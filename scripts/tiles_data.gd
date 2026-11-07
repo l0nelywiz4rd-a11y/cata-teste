@@ -27,6 +27,12 @@ static func velocidade(tile: int) -> float:
 	return float(_prop(tile, "velocidade", 1.0))
 
 
+# Bloqueia a visão? Se não for definido, segue o "solido" (parede sólida = opaca).
+# Vidro/grade: {"solido": true, "opaco": false}. Fumaça: {"solido": false, "opaco": true}.
+static func eh_opaco(tile: int) -> bool:
+	return bool(_prop(tile, "opaco", eh_solido(tile)))
+
+
 static func eh_escalavel(tile: int) -> bool:
 	return bool(_prop(tile, "escalavel", false))
 

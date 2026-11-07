@@ -7,7 +7,8 @@ extends Node3D
 # ---------- Sinais ----------
 signal caiu(altura: int)
 signal debito_mudou(valor: float)
-signal bateu_em(outro: Ator)   # tentou entrar numa célula ocupada (base do ataque)
+signal bateu_em(outro: Ator)
+signal celula_mudou(nova: Vector3i)   # a posição lógica mudou (andou, subiu, caiu)   # tentou entrar numa célula ocupada (base do ataque)
 
 # ---------- Ajustes (aparecem no Inspector) ----------
 @export var celula_inicial := Vector3i(3, 1, 3)
@@ -48,6 +49,7 @@ func _ready():
 	celula = celula_inicial
 	global_position = _centro_da_celula(celula)
 	mapa.registrar(self, celula)
+	add_to_group("atores")
 	caiu.connect(_ao_cair)
 	_ao_iniciar()
 
@@ -227,6 +229,7 @@ func tentar_escada(subindo: bool) -> bool:
 func _deslocar(alvo: Vector3i, custo: float, ao_terminar: Callable) -> void:
 	mapa.mover(self, celula, alvo)
 	celula = alvo
+	celula_mudou.emit(celula)
 	movendo = true
 	gastar(custo)
 
@@ -258,6 +261,7 @@ func _ao_chegar() -> void:
 	var altura := celula.y - pouso.y
 	mapa.mover(self, celula, pouso)
 	celula = pouso
+	celula_mudou.emit(celula)
 
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)   # acelera caindo
