@@ -10,7 +10,7 @@ signal debito_mudou(valor: float)
 signal bateu_em(outro: Ator)   # tentou entrar numa célula ocupada (base do ataque)
 
 # ---------- Ajustes (aparecem no Inspector) ----------
-@export var celula_inicial := Vector3i(2, 1, 2)
+@export var celula_inicial := Vector3i(3, 1, 3)
 @export var ticks_por_segundo := 550.0   # quanto o débito cai por segundo
 @export var bloquear_abismo := true      # true = não deixa andar pra onde não existe chão nenhum
 
@@ -30,8 +30,9 @@ var movendo := false
 var debito := 0.0
 var veio_de_escalavel := false
 
-# Qual node gira pra mostrar a direção (a Camera3D não gira junto).
-@onready var visual: Node3D = get_node_or_null("MeshInstance3D")
+# Node que gira pra mostrar a direção. Deve conter só o VISUAL (cápsula, cubo...),
+# nunca a câmera. Se não arrastar nada aqui, procura um filho chamado "Visual".
+@export var visual: Node3D
 
 
 # =====================================================================
@@ -40,6 +41,10 @@ var veio_de_escalavel := false
 
 func _ready():
 	mapa = get_tree().get_first_node_in_group("mapa") as MapaGrid
+	if visual == null:
+		visual = get_node_or_null("Visual") as Node3D
+	if visual == null:
+		push_warning("%s: sem node 'Visual', então não vai girar pra direção." % name)
 	celula = celula_inicial
 	global_position = _centro_da_celula(celula)
 	mapa.registrar(self, celula)
@@ -61,9 +66,14 @@ func _process(delta):
 	# 2) gancho pra coisas que rodam todo frame
 	_a_cada_frame(delta)
 
-	# 3) só decide uma ação se estiver livre
+	# 3) só age se estiver livre
 	if movendo or not pode_agir():
 		return
+
+	# 4) perdeu o chão (ator de baixo saiu, tile removido...)? Cai.
+	if _cair_se_sem_chao():
+		return
+
 	_pensar()
 
 
@@ -111,8 +121,10 @@ func pode_entrar(c: Vector3i) -> bool:
 	return tile_livre(c) and mapa.quem_esta(c) == null
 
 
+# Chão = um tile embaixo OU outro ator embaixo (dá pra pousar/ficar em cima de alguém).
 func tem_chao(c: Vector3i) -> bool:
-	return mapa.get_cell_item(c + Vector3i.DOWN) != -1
+	var abaixo := c + Vector3i.DOWN
+	return mapa.get_cell_item(abaixo) != -1 or mapa.quem_esta(abaixo) != null
 
 
 func achar_pouso(c: Vector3i) -> Vector3i:
@@ -225,6 +237,16 @@ func _deslocar(alvo: Vector3i, custo: float, ao_terminar: Callable) -> void:
 
 func _liberar() -> void:
 	movendo = false
+
+
+# Gravidade em repouso: reaproveita a lógica de queda do _ao_chegar.
+func _cair_se_sem_chao() -> bool:
+	if tem_chao(celula):
+		return false
+	movendo = true
+	veio_de_escalavel = false
+	_ao_chegar()          # se não houver pouso, ele mesmo volta movendo = false
+	return movendo
 
 
 func _ao_chegar() -> void:

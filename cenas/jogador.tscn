@@ -2,23 +2,22 @@
 
 [ext_resource type="Script" uid="uid://yo5d15mu6lbw" path="res://scripts/tiles_move.gd" id="1_bqi7g"]
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_u4i7n"]
-
 [sub_resource type="BoxMesh" id="BoxMesh_j4mvg"]
 size = Vector3(0.5, 0.5, 0.5)
 
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_u4i7n"]
+
 [node name="Jogador" type="Node3D" unique_id=1508754047]
 script = ExtResource("1_bqi7g")
-tempo_por_tile = null
-celula_inicial = null
-ticks_por_segundo = null
-
-[node name="Capsula" type="MeshInstance3D" parent="." unique_id=244590310]
-mesh = SubResource("CapsuleMesh_u4i7n")
-
-[node name="Cubo" type="MeshInstance3D" parent="." unique_id=1991845323]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45717508, 0.37338275)
-mesh = SubResource("BoxMesh_j4mvg")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1121742863]
 transform = Transform3D(1, 0, 0, 0, 0.5820293, 0.8131678, 0, -0.8131678, 0.5820293, 0, 5.724491, 3.6730292)
+
+[node name="Visual" type="Node3D" parent="." unique_id=2076324448]
+
+[node name="Cubo" type="MeshInstance3D" parent="Visual" unique_id=1991845323]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45717508, -0.34817022)
+mesh = SubResource("BoxMesh_j4mvg")
+
+[node name="Capsula" type="MeshInstance3D" parent="Visual" unique_id=244590310]
+mesh = SubResource("CapsuleMesh_u4i7n")

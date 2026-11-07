@@ -6,6 +6,12 @@ const ZOOMS := [1.0, 1.6, 2.4, 0.6]   # multiplicadores da distância
 var zoom_idx := 0
 var offset_camera: Vector3
 
+# Buffer de escada: se apertar < ou > durante o débito, o pedido fica guardado
+# por um tempinho e é executado assim que o personagem puder agir.
+const BUFFER_MS := 400
+var _escada_pedida := 0      # 1 = subir, -1 = descer, 0 = nenhum
+var _pedido_expira := 0
+
 @onready var camera: Camera3D = $Camera3D
 
 
@@ -23,15 +29,24 @@ func _unhandled_input(event):
 		zoom_idx = (zoom_idx + 1) % ZOOMS.size()
 		var tween := create_tween()
 		tween.tween_property(camera, "position", offset_camera * ZOOMS[zoom_idx], 0.2)
+	elif event.is_action_pressed("subir"):
+		_pedir_escada(1)
+	elif event.is_action_pressed("descer"):
+		_pedir_escada(-1)
+
+
+func _pedir_escada(sentido: int) -> void:
+	_escada_pedida = sentido
+	_pedido_expira = Time.get_ticks_msec() + BUFFER_MS
 
 
 func _pensar() -> void:
-	if Input.is_action_just_pressed("subir"):
-		tentar_escada(true)
-		return
-	if Input.is_action_just_pressed("descer"):
-		tentar_escada(false)
-		return
+	if _escada_pedida != 0:
+		var sentido := _escada_pedida
+		_escada_pedida = 0   # consome o pedido
+		if Time.get_ticks_msec() <= _pedido_expira:
+			tentar_escada(sentido > 0)
+			return
 
 	var direcao := _ler_direcao()
 	if direcao != Vector3i.ZERO:
