@@ -15,6 +15,14 @@ extends Node
 		luz_ambiente = valor
 		_sujo = true
 
+@export_range(0.0, 1.0) var luz_interior := 0.2:   # quanto da luz do dia chega sob um teto (0 = escuridão total)
+	set(valor):
+		luz_interior = valor
+		_sujo = true
+
+const ALCANCE_Z := 2            # quantos andares acima/abaixo uma fonte de luz alcança
+const CACHE_LUZ_MS := 2000      # fontes paradas reaproveitam o cálculo por esse tempo
+const VIZINHOS := [Vector3i.UP, Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]
 const LUZ_MINIMA := 0.15        # abaixo disso a célula é escura demais pra enxergar
 const LUZ_VIZINHA := 0.35       # células coladas em você sempre aparecem, com pelo menos isso
 # A escuridão segue sempre esta ordem:  iluminado < pouca luz < memória < nunca visto
@@ -40,6 +48,9 @@ var _textura: ImageTexture
 var _min := Vector3i.ZERO     # menor célula usada pelo mapa (vira o pixel 0)
 var _dim := Vector3i.ONE      # tamanho do mapa em células: (x, camadas, z)
 var _camada_textura := -999   # camada do jogador na última atualização
+var _y_max := 0               # camada mais alta do mapa (pra procurar teto)
+var _topo_opaco := {}         # coluna -> y do tile opaco mais alto (cache de UM recálculo)
+var _cache_luz := {}          # Vector4i(célula, raio) -> [quando, campo de luz]
 
 
 func _ready() -> void:
@@ -97,56 +108,121 @@ func recalcular() -> void:
 	_sujo = false
 	_tempo = 0.0
 	var antes := visiveis.duplicate()   # o que estava à vista antes (pra saber o que mudou)
+	_topo_opaco.clear()
 
 	var origem := jogador.celula
 	var camada := origem.y
 
-	var luz := _calcular_luz(camada)                       # luz das fontes
-	var campo: Dictionary = mapa.campo_de_visao(origem, alcance)      # o que não está atrás de parede
+	var luz := _calcular_luz(origem)                       # luz das fontes, em 3D
+	var campo: Dictionary = mapa.campo_de_visao(origem, alcance)   # o que não está atrás de parede
 
 	visiveis.clear()
 	for coluna in campo:
-		var nivel: float = maxf(luz_ambiente, luz.get(coluna, 0.0))
 		var perto: bool = campo[coluna] <= 1.5
-		if nivel < LUZ_MINIMA and not perto:
+		var nivel_topo := _nivel_em(Vector3i(coluna.x, camada, coluna.y), luz)
+		if nivel_topo < LUZ_MINIMA and not perto:
 			continue    # escuro demais e longe: não enxerga
-		if perto:
-			nivel = maxf(nivel, LUZ_VIZINHA)
-		_revelar_coluna(coluna, camada, nivel)
+		_revelar_coluna(coluna, camada, luz, perto)
 
 	_atualizar_textura(camada, antes)
 
 
 # Marca como visível a célula da camada do jogador e tudo que está embaixo dela
 # até o primeiro tile (o chão). Assim buracos mostram o fundo.
-func _revelar_coluna(coluna: Vector2i, camada: int, nivel: float) -> void:
+# Cada célula tem a SUA luz (um fundo de poço pode estar mais escuro que a borda).
+func _revelar_coluna(coluna: Vector2i, camada: int, luz: Dictionary, perto: bool) -> void:
 	var y := camada
 	while y >= Ator.Y_MINIMO:
 		var c := Vector3i(coluna.x, y, coluna.y)
-		visiveis[c] = maxf(visiveis.get(c, 0.0), nivel)
+		var nivel := _nivel_em(c, luz)
+		if perto:
+			nivel = maxf(nivel, LUZ_VIZINHA)
+		visiveis[c] = nivel
 		explorados[c] = true
 		if y < camada and mapa.get_cell_item(c) != -1:
 			break   # achou o chão
 		y -= 1
 
 
-# Luz de cada FonteDeLuz, que também não atravessa paredes opacas.
-# Devolve Dictionary: Vector2i (coluna) -> brilho.
-func _calcular_luz(camada: int) -> Dictionary:
+# =====================================================================
+#  LUZ: dia sob o céu, dia sob um teto, e fontes em 3D
+# =====================================================================
+
+# Tem algum tile opaco ACIMA dessa célula, na mesma coluna? Então a luz do dia não chega.
+func esta_exposto_ao_ceu(c: Vector3i) -> bool:
+	var coluna := Vector2i(c.x, c.z)
+	var topo: int
+	if _topo_opaco.has(coluna):
+		topo = _topo_opaco[coluna]
+	else:
+		topo = -100000   # nenhum tile opaco na coluna
+		for y in range(_y_max, _min.y - 1, -1):
+			if mapa.eh_opaco(Vector3i(c.x, y, c.z)):
+				topo = y
+				break
+		_topo_opaco[coluna] = topo
+	return topo <= c.y   # o próprio tile (ou nada) no topo: céu aberto
+
+
+# Luz de uma célula ABERTA (ar): dia (se tiver céu, ou uma fração sob teto) ou fontes.
+func _nivel_aberto(c: Vector3i, luz: Dictionary) -> float:
+	var dia := luz_ambiente if esta_exposto_ao_ceu(c) else luz_ambiente * luz_interior
+	return maxf(dia, luz.get(c, 0.0))
+
+
+# Luz de qualquer célula. Um tile opaco (chão, parede) não tem luz própria:
+# recebe a do ar vizinho (em cima e nos lados).
+func _nivel_em(c: Vector3i, luz: Dictionary) -> float:
+	if not mapa.eh_opaco(c):
+		return _nivel_aberto(c, luz)
+	var melhor := 0.0
+	for d in VIZINHOS:
+		var v: Vector3i = c + d
+		if not mapa.eh_opaco(v):
+			melhor = maxf(melhor, _nivel_aberto(v, luz))
+	return melhor
+
+
+# Brilho das FonteDeLuz em cada célula aberta, em 3D (alcançam andares próximos,
+# por buracos e escadas, e não atravessam chão, teto ou parede).
+# Devolve Dictionary: Vector3i -> brilho.
+func _calcular_luz(origem: Vector3i) -> Dictionary:
 	var luz := {}
 	for no in get_tree().get_nodes_in_group("fontes_luz"):
 		var fonte := no as FonteDeLuz
 		if fonte == null or fonte.raio <= 0:
 			continue
 		var c := mapa.local_to_map(mapa.to_local(fonte.global_position))
-		if c.y != camada:
-			continue    # só ilumina a própria camada
-		var campo: Dictionary = mapa.campo_de_visao(c, fonte.raio)
-		for coluna in campo:
-			var brilho: float = fonte.forca * (1.0 - campo[coluna] / (fonte.raio + 1.0))
-			if brilho > luz.get(coluna, 0.0):
-				luz[coluna] = brilho
+		# longe demais pra interessar (horizontal) ou só ilumina andares acima de nós
+		if maxi(absi(c.x - origem.x), absi(c.z - origem.z)) > alcance + fonte.raio:
+			continue
+		if c.y - ALCANCE_Z > origem.y:
+			continue
+		var campo: Dictionary = _campo_de_luz_cacheado(c, fonte.raio)
+		for alvo in campo:
+			var brilho: float = fonte.forca * (1.0 - campo[alvo] / (fonte.raio + 1.0))
+			if brilho > luz.get(alvo, 0.0):
+				luz[alvo] = brilho
 	return luz
+
+
+# O campo de uma fonte PARADA só precisa ser refeito de vez em quando.
+func _campo_de_luz_cacheado(c: Vector3i, raio: int) -> Dictionary:
+	var agora := Time.get_ticks_msec()
+	var chave := Vector4i(c.x, c.y, c.z, raio)
+	if _cache_luz.size() > 64:
+		_cache_luz.clear()   # fontes que andam deixam lixo; limpa de vez em quando
+	var entrada = _cache_luz.get(chave)
+	if entrada == null or agora - entrada[0] > CACHE_LUZ_MS:
+		entrada = [agora, mapa.campo_de_luz(c, raio, ALCANCE_Z)]
+		_cache_luz[chave] = entrada
+	return entrada[1]
+
+
+# Esqueça o cache de luz (chame se mudar tiles em tempo de execução).
+func invalidar_luz() -> void:
+	_cache_luz.clear()
+	_sujo = true
 
 
 # Criaturas fora do seu campo de visão ficam escondidas.
@@ -179,6 +255,7 @@ func preparar_textura() -> void:
 		maximo = Vector3i(maxi(maximo.x, c.x), maxi(maximo.y, c.y), maxi(maximo.z, c.z))
 	_min = minimo
 	_dim = maximo - minimo + Vector3i.ONE
+	_y_max = maximo.y
 
 	var altura_textura := _dim.z * _dim.y
 	if _dim.x > 16384 or altura_textura > 16384:

@@ -1,7 +1,8 @@
 class_name TilesData
 
-# A ordem aqui TEM que bater com a ordem dos tiles na MeshLibrary.
-enum Tile { PISO, PISOLENTO, RAMPA }
+# Os valores são os IDs da MeshLibrary (o número que o GridMap guarda), NÃO a posição na lista.
+# Se um tile for apagado e a biblioteca re-exportada, os ids podem pular: confira no painel do GridMap.
+enum Tile { PISO = 0, PISOLENTO = 1, RAMPA = 3 }
 
 const DADOS = {
 	Tile.PISO: {"solido": true, "escalavel": true},
@@ -27,7 +28,13 @@ static func velocidade(tile: int) -> float:
 	return float(_prop(tile, "velocidade", 1.0))
 
 
-# Bloqueia a visão? Se não for definido, segue o "solido" (parede sólida = opaca).
+# Funciona como TETO? Bloqueia a cabeça de quem está embaixo (não dá pra escalar sob ele).
+# Se não for definido, segue o "solido". Grade/vidro: {"solido": true, "teto": true, "opaco": false}.
+static func eh_teto(tile: int) -> bool:
+	return bool(_prop(tile, "teto", eh_solido(tile)))
+
+
+# Bloqueia a visão E a luz? Se não for definido, segue o "solido" (parede sólida = opaca).
 # Vidro/grade: {"solido": true, "opaco": false}. Fumaça: {"solido": false, "opaco": true}.
 static func eh_opaco(tile: int) -> bool:
 	return bool(_prop(tile, "opaco", eh_solido(tile)))

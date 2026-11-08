@@ -61,3 +61,39 @@ func campo_de_visao(origem: Vector3i, alcance: int) -> Dictionary:
 			if linha_de_visao_livre(origem, dx, dz):
 				campo[Vector2i(origem.x + dx, origem.z + dz)] = sqrt(d2)
 	return campo
+
+
+# =====================================================================
+#  LUZ EM 3D (pode atravessar andares por buracos, escadas, poços...)
+# =====================================================================
+
+# Igual à linha de visão, mas em 3 eixos: a luz sobe e desce por aberturas,
+# e é bloqueada por qualquer tile opaco no caminho (chão, teto, parede).
+func linha_de_luz_livre(origem: Vector3i, dx: int, dy: int, dz: int) -> bool:
+	var passos := maxi(maxi(absi(dx), absi(dy)), absi(dz))
+	for i in range(1, passos):
+		var f := float(i) / passos
+		var c := origem + Vector3i(roundi(dx * f), roundi(dy * f), roundi(dz * f))
+		if eh_opaco(c):
+			return false
+	return true
+
+
+# Todas as células ABERTAS (não opacas) que a luz da origem alcança.
+# raio = alcance em células (esfera); raio_z = quantos andares pra cima e pra baixo, no máximo.
+# Devolve Dictionary: Vector3i -> distância.
+func campo_de_luz(origem: Vector3i, raio: int, raio_z: int) -> Dictionary:
+	var campo := {}
+	var r2 := raio * raio
+	for dy in range(-raio_z, raio_z + 1):
+		for dx in range(-raio, raio + 1):
+			for dz in range(-raio, raio + 1):
+				var d2 := dx * dx + dy * dy + dz * dz
+				if d2 > r2:
+					continue
+				var alvo := origem + Vector3i(dx, dy, dz)
+				if eh_opaco(alvo):
+					continue   # só iluminamos o ar; as superfícies se iluminam pelo ar vizinho
+				if linha_de_luz_livre(origem, dx, dy, dz):
+					campo[alvo] = sqrt(d2)
+	return campo

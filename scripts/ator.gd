@@ -135,6 +135,11 @@ func achar_pouso(c: Vector3i) -> Vector3i:
 	return c
 
 
+# Dá pra se erguer? Um teto logo acima de você impede de escalar.
+func tem_espaco_acima(c: Vector3i) -> bool:
+	return not TilesData.eh_teto(mapa.get_cell_item(c + Vector3i.UP))
+
+
 func tem_escada(subindo: bool) -> bool:
 	for pos in [celula, celula + Vector3i.DOWN]:
 		var tile := mapa.get_cell_item(pos)
@@ -174,9 +179,10 @@ func tentar_mover(direcao: Vector3i) -> bool:
 	var alvo := celula + direcao
 
 	# Se o tile à frente é escalável, o alvo passa a ser o topo dele.
+	# (Precisa de espaço acima de você: sob um teto não dá pra escalar.)
 	if TilesData.eh_escalavel(mapa.get_cell_item(alvo)):
 		var topo := alvo + Vector3i.UP
-		if pode_entrar(topo):
+		if pode_entrar(topo) and tem_espaco_acima(celula):
 			alvo = topo
 
 	# Tem alguém lá? Isso vira "bater" (ataque no futuro), não movimento.
